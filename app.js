@@ -15,6 +15,7 @@ let entryDates = new Set();
 let allEntries = [];
 let currentView = "write";
 let isDateSelected = false;
+let petsLoadVersion = 0;
 
 function formatDate(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -167,6 +168,7 @@ async function refreshSession() {
   const { data: { user: current } } = await supabase.auth.getUser();
   user = current;
   $("authPanel").hidden = !!user;
+  $("loginHero").hidden = !!user;
   $("appPanel").hidden = !user;
   if (!user) return;
   $("who").textContent = user.email;
@@ -240,11 +242,13 @@ $("petForm").onsubmit = async (event) => {
 };
 
 async function loadPets() {
+  const loadVersion = ++petsLoadVersion;
   const { data, error } = await supabase.from("pets").select("id,name,species,photo_path").order("created_at");
   if (error) {
     msg(error.message);
     return [];
   }
+  if (loadVersion !== petsLoadVersion) return data;
   $("petSelect").replaceChildren();
   $("petProfile").replaceChildren();
   for (const pet of data) {
@@ -253,7 +257,7 @@ async function loadPets() {
   const pet = data[0];
   if (pet?.photo_path) {
     const { data: signed } = await supabase.storage.from(photoBucket).createSignedUrl(pet.photo_path, 3600);
-    if (signed) {
+    if (signed && loadVersion === petsLoadVersion) {
       const image = document.createElement("img");
       image.src = signed.signedUrl;
       image.alt = `${pet.name} 사진`;

@@ -5,7 +5,14 @@ body { margin: 0; }
 header { text-align: center; padding: 12px 0 24px; }
 header h1 { font-size: 2rem; color: #277d62; margin: 0; }
 header p { color: #68786d; }
+.login-hero { display: flex; justify-content: center; padding: 8px 0 30px; }
+.login-hero img { width: min(100%, 500px); border-radius: 24px; box-shadow: 0 12px 32px #193d2830; }
 .card { background: white; border: 1px solid #e4ebe6; border-radius: 18px; padding: 22px; margin-bottom: 18px; box-shadow: 0 4px 18px #193d2810; }
+#authPanel { position: fixed; top: 16px; right: 16px; z-index: 10; width: min(280px, calc(100vw - 32px)); padding: 14px; margin: 0; box-shadow: 0 8px 28px #193d2830; }
+#authPanel h2 { font-size: 1rem; margin-bottom: 10px; }
+#authPanel input { padding: 9px; margin: 5px 0 9px; }
+#authPanel .actions { gap: 6px; }
+#authPanel button { padding: 9px 11px; font-size: .85rem; }
 h2 { font-size: 1.15rem; margin: 0 0 18px; }
 input, select, textarea { display: block; width: 100%; border: 1px solid #ccd8ce; border-radius: 9px; padding: 12px; margin: 8px 0 14px; font: inherit; background: #fff; }
 label { display: block; font-size: .9rem; font-weight: 600; }
@@ -18,7 +25,7 @@ button:hover { filter: brightness(.94); }
 .side-menu { display: grid; gap: 8px; position: sticky; top: 16px; }
 .menu-button { width: 100%; text-align: left; background: #e7eee9; color: #2d614b; }
 .menu-button.active { background: #258265; color: #fff; }
-.side-menu .pet-profile { display: flex; justify-content: center; margin-top: 10px; }
+.side-menu .pet-profile { display: flex; justify-content: center; margin-top: 10px; max-width: 100%; overflow: hidden; }
 .side-menu .pet-profile-image { width: 126px; height: 126px; }
 .app-content { min-width: 0; }
 .chip { padding: 8px 12px; background: #e8f3ec; border-radius: 20px; display: inline-flex; align-items: center; gap: 7px; }
@@ -42,6 +49,7 @@ button:hover { filter: brightness(.94); }
 .calendar-empty { min-height: 40px; }
 @media (max-width: 620px) { .diary-workspace { grid-template-columns: 1fr; gap: 16px; } }
 @media (max-width: 620px) { .app-layout { grid-template-columns: 1fr; } .side-menu { grid-template-columns: repeat(3, 1fr); position: static; } .menu-button { font-size: .85rem; padding: 10px 6px; text-align: center; } .side-menu .pet-profile { grid-column: 1 / -1; } .side-menu .pet-profile-image { width: 100px; height: 100px; } }
+@media (max-width: 620px) { #authPanel { position: static; width: 100%; margin-bottom: 18px; } .login-hero { padding-bottom: 18px; } }
 .entry { padding: 16px 0; border-top: 1px solid #edf1ed; }
 .entry h3 { margin: 5px 0; }
 .entry p { white-space: pre-wrap; overflow-wrap: anywhere; }
