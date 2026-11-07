@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>PetLog 반려동물 일기</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="wrap">
+      <header>
+        <h1>🐾 PetLog</h1>
+        <p>우리 아이와 함께한 하루를 기록하세요</p>
+      </header>
+      <section id="authPanel" class="card">
+        <h2>로그인 / 회원가입</h2>
+        <input id="email" type="email" placeholder="이메일" />
+        <input
+          id="password"
+          type="password"
+          placeholder="비밀번호 (6자 이상)"
+        />
+        <div class="actions">
+          <button id="login">로그인</button
+          ><button id="signup" class="secondary">회원가입</button>
+        </div>
+      </section>
+      <section id="appPanel" hidden>
+        <div class="bar">
+          <span id="who"></span
+          ><button id="logout" class="secondary">로그아웃</button>
+        </div>
+        <section id="petRegistrationCard" class="card">
+          <h2>반려동물 등록</h2>
+          <form id="petForm">
+            <label
+              >이름<input
+                id="petName"
+                required
+                maxlength="50"
+                placeholder="반려동물 이름"
+            /></label>
+            <label
+              >종류<select id="species">
+                <option value="cat">고양이</option>
+                <option value="dog">강아지</option>
+                <option value="other">기타</option>
+              </select></label
+            >
+            <label>생일<input id="birthday" type="date" /></label>
+            <label
+              >사진 (선택, 5MB 이하)<input
+                id="petPhoto"
+                type="file"
+                accept="image/*"
+            /></label>
+            <button>등록하고 오늘의 일기 쓰기</button>
+          </form>
+        </section>
+        <section id="diaryArea" hidden>
+          <section class="card">
+            <h2>오늘의 일기</h2>
+            <div id="petProfile" class="pet-profile"></div>
+            <div class="diary-workspace">
+            <section class="calendar" aria-label="일기 날짜 선택">
+              <div class="calendar-header">
+                <button id="previousMonth" type="button" class="secondary" aria-label="이전 달">‹</button>
+                <strong id="calendarMonth"></strong>
+                <button id="nextMonth" type="button" class="secondary" aria-label="다음 달">›</button>
+              </div>
+              <div class="calendar-week" aria-hidden="true"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+              <div id="calendarDays" class="calendar-days"></div>
+            </section>
+            <form id="diaryForm">
+              <label>반려동물<select id="petSelect" required></select></label>
+              <label>날짜<input id="diaryDate" type="date" required /></label>
+              <label
+                >제목<input
+                  id="diaryTitle"
+                  required
+                  maxlength="100"
+                  placeholder="오늘 있었던 일"
+              /></label>
+              <label
+                >내용<textarea
+                  id="diaryBody"
+                  rows="4"
+                  placeholder="오늘의 이야기를 적어주세요"
+                ></textarea>
+              </label>
+              <label
+                >사진 (선택, 5MB 이하)<input
+                  id="photo"
+                  type="file"
+                  accept="image/*"
+              /></label>
+              <button>일기 저장</button>
+            </form>
+            </div>
+          </section>
+          <section class="card">
+            <h2>일기 목록</h2>
+            <div id="entries"></div>
+          </section>
+        </section>
+      </section>
+      <p id="message" role="status"></p>
+    </main>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
