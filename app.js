@@ -2,12 +2,19 @@ import { supabase } from "./supabase.js";
 
 const $ = (id) => document.getElementById(id);
 const msg = (text) => { $("message").textContent = text; };
+const showLoginError = (text) => {
+  msg(text);
+  alert(text);
+};
 const photoBucket = "pet-photos";
 const maxPhotoSize = 5 * 1024 * 1024;
 let user = null;
 let editingEntry = null;
 let calendarDate = new Date();
 let entryDates = new Set();
+let allEntries = [];
+let currentView = "write";
+let isDateSelected = false;
 
 function formatDate(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -34,9 +41,42 @@ async function removePhoto(path) {
 
 function showAppView(pets) {
   const hasPet = pets.length > 0;
-  $("petRegistrationCard").hidden = hasPet;
-  $("diaryArea").hidden = !hasPet;
+  $("petRegistrationCard").hidden = currentView !== "pet";
+  $("diaryArea").hidden = currentView === "pet" || !hasPet;
+  if (!hasPet) $("petRegistrationCard").hidden = false;
 }
+
+function showDiaryForm(title) {
+  $("diaryScreenTitle").textContent = title;
+  $("diaryWriteCard").classList.add("date-selected");
+  $("diaryForm").hidden = false;
+}
+
+function showCalendarOnly() {
+  $("diaryScreenTitle").textContent = "일기 보기";
+  $("diaryWriteCard").classList.remove("date-selected");
+  $("diaryForm").hidden = true;
+}
+
+function setView(view) {
+  currentView = view;
+  document.querySelectorAll(".menu-button").forEach((button) => {
+    button.classList.toggle("active", button.dataset.view === view);
+  });
+  const hasPet = $("petSelect").options.length > 0;
+  showAppView({ length: hasPet ? 1 : 0 });
+  $("diaryWriteCard").hidden = view !== "write";
+  $("entries").closest(".card").hidden = view !== "view";
+  if (view === "write") {
+    isDateSelected = false;
+    showCalendarOnly();
+  }
+  if (view === "view") renderEntries();
+}
+
+document.querySelectorAll(".menu-button").forEach((button) => {
+  button.onclick = () => setView(button.dataset.view);
+});
 
 function setEditingMode(entry = null) {
   editingEntry = entry;
@@ -59,6 +99,8 @@ function resetDiaryForm() {
   $("diaryForm").reset();
   $("diaryDate").value = formatDate(new Date());
   $("photo").value = "";
+  isDateSelected = false;
+  showCalendarOnly();
   setEditingMode();
   renderCalendar();
 }
@@ -88,8 +130,15 @@ function renderCalendar() {
     if (dateText === selectedDate) button.classList.add("selected");
     if (entryDates.has(dateText)) button.classList.add("has-entry");
     button.onclick = () => {
-      if (editingEntry) setEditingMode();
       $("diaryDate").value = dateText;
+      if (currentView === "view") {
+        renderCalendar();
+        renderEntries();
+        return;
+      }
+      if (editingEntry) setEditingMode();
+      isDateSelected = true;
+      showDiaryForm("일기 등록");
       $("diaryTitle").value = "";
       $("diaryBody").value = "";
       $("photo").value = "";
@@ -122,19 +171,41 @@ async function refreshSession() {
   if (!user) return;
   $("who").textContent = user.email;
   const pets = await loadPets();
+  if (!pets.length) currentView = "pet";
   showAppView(pets);
-  if (pets.length) await loadEntries();
+  document.querySelectorAll(".menu-button").forEach((button) => {
+    button.classList.toggle("active", button.dataset.view === currentView);
+  });
+  if (pets.length) {
+    setView("write");
+    await loadEntries();
+  }
 }
 
 $("signup").onclick = async () => {
-  const { error } = await supabase.auth.signUp({ email: $("email").value, password: $("password").value });
+  const email = $("email").value.trim().toLowerCase();
+  const password = $("password").value;
+  if (!email || !password) return msg("이메일과 비밀번호를 입력해 주세요.");
+  const { error } = await supabase.auth.signUp({ email, password });
   msg(error?.message || "가입 요청이 완료되었습니다. 이메일 인증 설정을 확인해 주세요.");
 };
 
 $("login").onclick = async () => {
-  const { error } = await supabase.auth.signInWithPassword({ email: $("email").value, password: $("password").value });
-  if (error) return msg(error.message);
-  await refreshSession();
+  try {
+    const email = $("email").value.trim().toLowerCase();
+    const password = $("password").value;
+    if (!email || !password) return showLoginError("이메일과 비밀번호를 입력해 주세요.");
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      const text = error.message === "Invalid login credentials"
+        ? "이메일 또는 비밀번호가 맞지 않습니다. 처음이라면 회원가입을 먼저 해 주세요."
+        : error.message;
+      return showLoginError(text);
+    }
+    await refreshSession();
+  } catch (error) {
+    showLoginError(`로그인 처리 중 오류가 발생했습니다: ${error.message}`);
+  }
 };
 
 $("logout").onclick = async () => {
@@ -162,7 +233,8 @@ $("petForm").onsubmit = async (event) => {
   }
   $("petForm").reset();
   const pets = await loadPets();
-  showAppView(pets);
+  currentView = "write";
+  setView("write");
   await loadEntries();
   msg("반려동물을 등록했습니다.");
 };
@@ -225,6 +297,7 @@ $("diaryForm").onsubmit = async (event) => {
 };
 
 function editEntry(entry) {
+  setView("write");
   $("petSelect").value = entry.pet_id;
   $("diaryDate").value = entry.entry_date;
   $("diaryTitle").value = entry.title;
@@ -232,6 +305,8 @@ function editEntry(entry) {
   $("photo").value = "";
   const selected = new Date(`${entry.entry_date}T00:00:00`);
   calendarDate = new Date(selected.getFullYear(), selected.getMonth(), 1);
+  isDateSelected = true;
+  showDiaryForm("일기 수정");
   setEditingMode(entry);
   renderCalendar();
   $("diaryForm").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -242,9 +317,16 @@ async function loadEntries() {
   const { data, error } = await supabase.from("diary_entries").select("id,pet_id,entry_date,title,body,photo_path,pets(name)").order("entry_date", { ascending: false }).limit(100);
   if (error) return msg(error.message);
   entryDates = new Set(data.map((entry) => entry.entry_date));
+  allEntries = data;
   renderCalendar();
+  renderEntries();
+}
+
+async function renderEntries() {
+  const entriesToShow = allEntries;
+  const data = entriesToShow;
   $("entries").replaceChildren();
-  for (const entry of data) {
+  for (const entry of entriesToShow) {
     const article = document.createElement("article");
     article.className = "entry";
     const meta = document.createElement("div");
@@ -282,6 +364,11 @@ async function loadEntries() {
     $("entries").append(article);
   }
   if (!data.length) $("entries").textContent = "아직 작성한 일기가 없습니다.";
+  if (!entriesToShow.length) {
+    $("entries").textContent = currentView === "view"
+      ? "선택한 날짜에 작성한 일기가 없습니다."
+      : "아직 작성한 일기가 없습니다.";
+  }
 }
 
 supabase.auth.onAuthStateChange(() => setTimeout(() => refreshSession().catch((error) => msg(error.message)), 0));
